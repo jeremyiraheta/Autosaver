@@ -3,21 +3,57 @@
 #include <string.h>
 #include <winuser.h>
 #include <stdlib.h>
+#include <dirent.h> 
 const int IDT_TIMER1 = 0;
 bool running = false;
 char file[MAX_PATH];
 int DisplayResourceNAMessageBox(HWND,char*,char*);
+int isFile(const char* name)
+{
+    DIR* directory = opendir(name);
+
+    if(directory != NULL)
+    {
+     closedir(directory);
+     return 0;
+    }else return 1;
+
+    return -1;
+}
+bool copyFiles(char * dir)
+{	
+	struct dirent *de;
+    DIR *dr = opendir(file);
+    while((de = readdir(dr)) != NULL) 
+    {
+		char f[MAX_PATH];
+		char o[MAX_PATH];
+		strcpy(o,file);
+		strcat(o,"\\");
+		strcat(o,de->d_name);
+		strcpy(f,file);
+		strcat(f,"\\");
+		strcat(f,de->d_name);
+		strcat(f,".backup");
+		CopyFile(o,f,false);	
+	}
+	return true;
+}
 bool backup(){
 	char nfile[MAX_PATH];
 	strcpy(nfile, file);
 	strcat(nfile,".backup");
-	if(!CopyFile(file,nfile,false))
+	if(isFile(file)){
+		if(!CopyFile(file,nfile,false))
 		{
 			int EC = GetLastError();			
 			DisplayResourceNAMessageBox(NULL, "Ocurrio un error en la copia", "ERROR");
 			return false;
 			}
-	return true;
+		return true;	
+	}else{
+		return copyFiles(file);
+	}	
 }
 /* This is where all the input to the window goes to */
 LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {
@@ -106,7 +142,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		DisplayResourceNAMessageBox(hwnd, "Error en parametros", "Error");		     
       	return 0;
    	}   	
-   	if(nArgs <= 1)
+   	if(nArgs <= 2)
    		DisplayResourceNAMessageBox(hwnd, "Error en parametros, el primero debe ser la ruta del archivo\nel segundo el intervalo de autoguardado en minutos\nEj. autosaver c:\\myfile.bak 10", "Error");
    	char buffer[3];
    	char path[MAX_PATH];
